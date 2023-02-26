@@ -24,15 +24,12 @@ class RT1ImageTokenizer(tf.keras.layers.Layer):
 
   def __init__(self,
                embedding_output_dim: int,
-               use_token_learner: bool = False,
                num_tokens: int = 8,
                **kwargs):
     """Instantiates a RT1ImageTokenizer.
 
     Args:
       embedding_output_dim: The output size of the tokens.
-      use_token_learner: Whether to use token learner. See
-        https://arxiv.org/abs/2106.11297
       num_tokens: Relevant only for token learner - the number of learned
         tokens.
       **kwargs: Keyword arguments to base class.
@@ -43,19 +40,13 @@ class RT1ImageTokenizer(tf.keras.layers.Layer):
     self._tokenizer = pretrained_efficientnet_encoder.EfficientNetEncoder(
         pooling=False, early_film=True)
 
-    self._use_token_learner = use_token_learner
-    if self._use_token_learner:
-      self._num_tokens = num_tokens
-      self._token_learner = token_learner.TokenLearnerModule(
-          num_tokens=self._num_tokens)
+    self._num_tokens = num_tokens
+    self._token_learner = token_learner.TokenLearnerModule(
+        num_tokens=self._num_tokens)
 
   @property
   def tokens_per_context_image(self) -> int:
-    if self._use_token_learner:
-      num_tokens = self._num_tokens
-    else:
-      num_tokens = 81
-    return num_tokens
+    return self._num_tokens
 
   def __call__(self,
                image: tf.Tensor,
@@ -87,8 +78,7 @@ class RT1ImageTokenizer(tf.keras.layers.Layer):
       with tf.control_dependencies([assertion]):
         context = tf.reshape(context, [b * t, tf.shape(context)[-1]])
     tokens = self.get_image_embeddings(image, context, training)
-    if self._use_token_learner:
-      tokens = self._token_learner(tokens, training)
+    tokens = self._token_learner(tokens, training)
     # Unflatten the time axis, which was previously flattened into the batch.
     tokens = tf.reshape(tokens, [b, t, tf.shape(tokens)[1], -1])
     return tokens
