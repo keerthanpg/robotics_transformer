@@ -108,5 +108,5 @@ class RT1ImageTokenizer(tf.keras.layers.Layer):
       tokens of shape (b, num_tokens, emedding_dim)
     """
     image_tokens = self._tokenizer(image, context=context, training=training)
-    image_tokens = tf.reshape(image_tokens, [-1, 81, 512])
+    image_tokens = tf.reshape(image_tokens, [-1, 81, 256])
     return image_tokens
